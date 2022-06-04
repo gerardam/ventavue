@@ -3,9 +3,8 @@
     <v-flex>
       <v-data-table
         :headers="headers"
-        :items="desserts"
+        :items="categorias"
         :search="search"
-        sort-by="calories"
         class=""
       >
         <template v-slot:top>
@@ -30,7 +29,7 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  New Item
+                  Nuevo
                 </v-btn>
               </template>
               <v-card>
@@ -41,35 +40,25 @@
                 <v-card-text>
                   <v-container>
                     <v-row>
-                      <v-col cols="12" sm="6" md="4">
+                      <v-col cols="12" sm="12" md="12">
                         <v-text-field
-                          v-model="editedItem.name"
-                          label="Dessert name"
+                          v-model="nombre"
+                          label="Nombre"
                         ></v-text-field>
                       </v-col>
-                      <v-col cols="12" sm="6" md="4">
+                      <v-col cols="12" sm="12" md="12">
                         <v-text-field
-                          v-model="editedItem.calories"
-                          label="Calories"
+                          v-model="descripcion"
+                          label="Descripcion"
                         ></v-text-field>
                       </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          v-model="editedItem.fat"
-                          label="Fat (g)"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          v-model="editedItem.carbs"
-                          label="Carbs (g)"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          v-model="editedItem.protein"
-                          label="Protein (g)"
-                        ></v-text-field>
+                      <v-col cols="12" sm="12" md="12" v-show="valida">
+                        <div
+                          class="red--text"
+                          v-for="v in validaMensaje"
+                          :key="v"
+                          v-text="v"
+                        ></div>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -77,10 +66,12 @@
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close">
-                    Cancel
+                  <v-btn color="red darken-1" text @click="close">
+                    Cancelar
                   </v-btn>
-                  <v-btn color="blue darken-1" text @click="save"> Save </v-btn>
+                  <v-btn color="green darken-1" text @click="Guardar">
+                    Guardar
+                  </v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -103,14 +94,22 @@
             </v-dialog>
           </v-toolbar>
         </template>
-        <template v-slot:item.actions="{ item }">
+        <template v-slot:item.opciones="{ item }">
           <v-icon small class="mr-2" @click="editItem(item)">
             mdi-pencil
           </v-icon>
           <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
         </template>
+        <template v-slot:item.condicion="{ item }">
+          <div v-if="item.condicion">
+            <span class="green--text">Activo</span>
+          </div>
+          <div v-else>
+            <span class="red--text">Inactivo</span>
+          </div>
+        </template>
         <template v-slot:no-data>
-          <v-btn color="primary" @click="initialize"> Reset </v-btn>
+          <!-- <v-btn color="primary" @click="initialize"> Resetear </v-btn> -->
         </template>
       </v-data-table>
     </v-flex>
@@ -118,47 +117,39 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
-  data() {
-    return {
-      dialog: false,
-      dialogDelete: false,
-      headers: [
-        {
-          text: "Dessert (100g serving)",
-          align: "start",
-          sortable: false,
-          value: "name",
-        },
-        { text: "Calories", value: "calories" },
-        { text: "Fat (g)", value: "fat" },
-        { text: "Carbs (g)", value: "carbs" },
-        { text: "Protein (g)", value: "protein" },
-        { text: "Actions", value: "actions", sortable: false },
-      ],
-      search: "",
-      desserts: [],
-      editedIndex: -1,
-      editedItem: {
-        name: "",
-        calories: 0,
-        fat: 0,
-        carbs: 0,
-        protein: 0,
-      },
-      defaultItem: {
-        name: "",
-        calories: 0,
-        fat: 0,
-        carbs: 0,
-        protein: 0,
-      },
-    };
-  },
+  data: () => ({
+    //return {
+    categorias: [],
+    dialog: false,
+    dialogDelete: false,
+    headers: [
+      { text: "Opciones", value: "opciones", sortable: false },
+      { text: "Nombre", value: "nombre" },
+      { text: "Descripción", value: "descripcion", sortable: false },
+      { text: "Estado", value: "condicion" },
+    ],
+    search: "",
+    editedIndex: -1,
+    editedItem: {
+      nombre: "",
+      descripcion: "",
+      condicion: false,
+    },
+    id: "",
+    nombre: "",
+    descripcion: "",
+    valida: 0,
+    validaMensaje: [],
+    //};
+  }),
 
   computed: {
     formTitle() {
-      return this.editedIndex === -1 ? "New Item" : "Edit Item";
+      return this.editedIndex === -1
+        ? "Agregar categoria"
+        : "Actualizar categoria";
     },
   },
 
@@ -172,83 +163,21 @@ export default {
   },
 
   created() {
-    this.initialize();
+    this.listar();
   },
 
   methods: {
-    initialize() {
-      this.desserts = [
-        {
-          name: "Frozen Yogurt",
-          calories: 159,
-          fat: 6.0,
-          carbs: 24,
-          protein: 4.0,
-        },
-        {
-          name: "Ice cream sandwich",
-          calories: 237,
-          fat: 9.0,
-          carbs: 37,
-          protein: 4.3,
-        },
-        {
-          name: "Eclair",
-          calories: 262,
-          fat: 16.0,
-          carbs: 23,
-          protein: 6.0,
-        },
-        {
-          name: "Cupcake",
-          calories: 305,
-          fat: 3.7,
-          carbs: 67,
-          protein: 4.3,
-        },
-        {
-          name: "Gingerbread",
-          calories: 356,
-          fat: 16.0,
-          carbs: 49,
-          protein: 3.9,
-        },
-        {
-          name: "Jelly bean",
-          calories: 375,
-          fat: 0.0,
-          carbs: 94,
-          protein: 0.0,
-        },
-        {
-          name: "Lollipop",
-          calories: 392,
-          fat: 0.2,
-          carbs: 98,
-          protein: 0,
-        },
-        {
-          name: "Honeycomb",
-          calories: 408,
-          fat: 3.2,
-          carbs: 87,
-          protein: 6.5,
-        },
-        {
-          name: "Donut",
-          calories: 452,
-          fat: 25.0,
-          carbs: 51,
-          protein: 4.9,
-        },
-        {
-          name: "KitKat",
-          calories: 518,
-          fat: 26.0,
-          carbs: 65,
-          protein: 7,
-        },
-      ];
+    listar() {
+      let me = this;
+      axios
+        .get("api/Categorias/Listar")
+        .then(function (response) {
+          //console.log(response);
+          me.categorias = response.data;
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
     },
 
     editItem(item) {
@@ -268,14 +197,6 @@ export default {
       this.closeDelete();
     },
 
-    close() {
-      this.dialog = false;
-      this.$nextTick(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
-      });
-    },
-
     closeDelete() {
       this.dialogDelete = false;
       this.$nextTick(() => {
@@ -284,13 +205,54 @@ export default {
       });
     },
 
-    save() {
-      if (this.editedIndex > -1) {
-        Object.assign(this.desserts[this.editedIndex], this.editedItem);
-      } else {
-        this.desserts.push(this.editedItem);
+    close() {
+      this.dialog = false;
+    },
+
+    limpiar() {
+      this.id = "";
+      this.nombre = "";
+      this.descripcion = "";
+    },
+
+    Guardar() {
+      if (this.validar()) {
+        return;
       }
-      this.close();
+      if (this.editedIndex > -1) {
+        //codigo para editar
+      } else {
+        //codigo para guardar
+        let me = this;
+        axios
+          .post("api/Categorias/Crear", {
+            nombre: me.nombre,
+            descripcion: me.descripcion,
+          })
+          .then(function () {
+            //function (response) {
+            me.close();
+            me.listar();
+            me.limpiar();
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+    },
+
+    validar() {
+      this.valida = 0;
+      this.validaMensaje = [];
+      if (this.nombre.length < 3 || this.nombre.length > 50) {
+        this.validaMensaje.push(
+          "El nombre debe tener minimo 3 caracteres y maximo 50."
+        );
+      }
+      if (this.validaMensaje.length) {
+        this.valida = 1;
+      }
+      return this.valida;
     },
   },
 };
