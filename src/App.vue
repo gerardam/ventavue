@@ -3,11 +3,11 @@
     <v-navigation-drawer
       class="blue-grey lighten-5"
       fixed
-      :clipped="$vuetify.breakpoint.mdAndUp"
       app
       v-model="drawer"
       style="top: 64px; z-index: 1"
     >
+      <!-- :clipped="$vuetify.breakpoint.mdAndUp" -->
       <v-list>
         <v-list-item :to="{ name: 'home' }">
           <v-list-item-icon>
@@ -142,19 +142,19 @@ export default {
   name: "App",
   data() {
     return {
-      clipped: false,
+      //clipped: false,
       drawer: true,
-      fixed: false,
-      items: [
-        {
-          icon: "bubble_chart",
-          title: "Inspire",
-        },
-      ],
-      miniVariant: false,
-      right: true,
-      rightDrawer: false,
-      title: "Vuetify.js",
+      //fixed: false,
+      // items: [
+      //   {
+      //     icon: "bubble_chart",
+      //     title: "Inspire",
+      //   },
+      // ],
+      //miniVariant: false,
+      //right: true,
+      //rightDrawer: false,
+      //title: "Vuetify.js",
     };
   },
 };
