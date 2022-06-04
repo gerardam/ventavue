@@ -75,19 +75,46 @@
                 </v-card-actions>
               </v-card>
             </v-dialog>
-            <v-dialog v-model="dialogDelete" max-width="500px">
+
+            <v-dialog v-model="adModal" max-width="290px">
               <v-card>
-                <v-card-title class="text-h5"
-                  >Are you sure you want to delete this item?</v-card-title
+                <v-card-title class="headline" v-if="adAccion == 1"
+                  >Activar categoria?</v-card-title
                 >
+                <v-card-title class="headline" v-if="adAccion == 2"
+                  >Desactivar categoria?</v-card-title
+                >
+                <v-card-text>
+                  Esta seguro de
+                  <span v-if="adAccion == 1">Activar</span>
+                  <span v-if="adAccion == 2">Desactivar</span>
+                  la categoria {{ adNombre }}
+                </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="closeDelete"
-                    >Cancel</v-btn
+                  <v-btn
+                    color="red darken-1"
+                    text
+                    @click="ActivarDesactivarCerrar"
                   >
-                  <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-                    >OK</v-btn
+                    Cancelar
+                  </v-btn>
+                  <v-btn
+                    color="green darken-1"
+                    text
+                    v-if="adAccion == 1"
+                    @click="Activar"
                   >
+                    Aceptar
+                  </v-btn>
+                  <v-btn
+                    color="green darken-1"
+                    text
+                    v-if="adAccion == 2"
+                    @click="Desactivar"
+                  >
+                    Aceptar
+                  </v-btn>
                   <v-spacer></v-spacer>
                 </v-card-actions>
               </v-card>
@@ -95,10 +122,27 @@
           </v-toolbar>
         </template>
         <template v-slot:item.opciones="{ item }">
-          <v-icon small class="mr-2" @click="editItem(item)">
+          <v-icon class="mr-2" color="blue" @click="EditarItem(item)">
             mdi-pencil
           </v-icon>
-          <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
+          <template v-if="item.condicion">
+            <v-icon
+              color="green"
+              large
+              @click="ActivarDesactivarMostrar(2, item)"
+            >
+              toggle_on
+            </v-icon>
+          </template>
+          <template v-else>
+            <v-icon
+              color="red"
+              large
+              @click="ActivarDesactivarMostrar(1, item)"
+            >
+              toggle_off
+            </v-icon>
+          </template>
         </template>
         <template v-slot:item.condicion="{ item }">
           <div v-if="item.condicion">
@@ -109,7 +153,7 @@
           </div>
         </template>
         <template v-slot:no-data>
-          <!-- <v-btn color="primary" @click="initialize"> Resetear </v-btn> -->
+          <v-btn color="primary" @click="Listar"> Cargar </v-btn>
         </template>
       </v-data-table>
     </v-flex>
@@ -119,55 +163,32 @@
 <script>
 import axios from "axios";
 export default {
-  data: () => ({
-    //return {
-    categorias: [],
-    dialog: false,
-    dialogDelete: false,
-    headers: [
-      { text: "Opciones", value: "opciones", sortable: false },
-      { text: "Nombre", value: "nombre" },
-      { text: "Descripción", value: "descripcion", sortable: false },
-      { text: "Estado", value: "condicion" },
-    ],
-    search: "",
-    editedIndex: -1,
-    editedItem: {
+  data() {
+    return {
+      categorias: [],
+      dialog: false,
+      headers: [
+        { text: "Nombre", value: "nombre" },
+        { text: "Descripción", value: "descripcion", sortable: false },
+        { text: "Estado", value: "condicion" },
+        { text: "Opciones", value: "opciones", sortable: false },
+      ],
+      search: "",
+      editedIndex: -1,
+      id: "",
       nombre: "",
       descripcion: "",
-      condicion: false,
-    },
-    id: "",
-    nombre: "",
-    descripcion: "",
-    valida: 0,
-    validaMensaje: [],
-    //};
-  }),
-
-  computed: {
-    formTitle() {
-      return this.editedIndex === -1
-        ? "Agregar categoria"
-        : "Actualizar categoria";
-    },
-  },
-
-  watch: {
-    dialog(val) {
-      val || this.close();
-    },
-    dialogDelete(val) {
-      val || this.closeDelete();
-    },
-  },
-
-  created() {
-    this.listar();
+      valida: 0,
+      validaMensaje: [],
+      adModal: 0,
+      adAccion: 0,
+      adNombre: "",
+      adId: "",
+    };
   },
 
   methods: {
-    listar() {
+    Listar() {
       let me = this;
       axios
         .get("api/Categorias/Listar")
@@ -180,60 +201,49 @@ export default {
         });
     },
 
-    editItem(item) {
-      this.editedIndex = this.desserts.indexOf(item);
-      this.editedItem = Object.assign({}, item);
+    EditarItem(item) {
+      this.id = item.idCategoria;
+      this.nombre = item.nombre;
+      this.descripcion = item.descripcion;
+      this.editedIndex = 1;
       this.dialog = true;
     },
 
-    deleteItem(item) {
-      this.editedIndex = this.desserts.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialogDelete = true;
-    },
-
-    deleteItemConfirm() {
-      this.desserts.splice(this.editedIndex, 1);
-      this.closeDelete();
-    },
-
-    closeDelete() {
-      this.dialogDelete = false;
-      this.$nextTick(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
-      });
-    },
-
-    close() {
-      this.dialog = false;
-    },
-
-    limpiar() {
-      this.id = "";
-      this.nombre = "";
-      this.descripcion = "";
-    },
-
     Guardar() {
-      if (this.validar()) {
+      if (this.Validar()) {
         return;
       }
       if (this.editedIndex > -1) {
         //codigo para editar
-      } else {
-        //codigo para guardar
         let me = this;
         axios
-          .post("api/Categorias/Crear", {
+          .put("api/Categorias/Actualizar/", {
+            idCategoria: me.id,
             nombre: me.nombre,
             descripcion: me.descripcion,
           })
           .then(function () {
             //function (response) {
             me.close();
-            me.listar();
-            me.limpiar();
+            me.Listar();
+            me.Limpiar();
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      } else {
+        //codigo para guardar
+        let me = this;
+        axios
+          .post("api/Categorias/Crear/", {
+            nombre: me.nombre,
+            descripcion: me.descripcion,
+          })
+          .then(function () {
+            //function (response) {
+            me.close();
+            me.Listar();
+            me.Limpiar();
           })
           .catch(function (error) {
             console.log(error);
@@ -241,7 +251,56 @@ export default {
       }
     },
 
-    validar() {
+    ActivarDesactivarMostrar(accion, item) {
+      this.adModal = 1;
+      this.adNombre = item.nombre;
+      this.adId = item.idCategoria;
+      if (accion == 1) {
+        this.adAccion = 1;
+      } else if (accion == 2) {
+        this.adAccion = 2;
+      } else {
+        this.adModal = 0;
+      }
+    },
+
+    ActivarDesactivarCerrar() {
+      this.adModal = 0;
+    },
+
+    Activar() {
+      let me = this;
+      axios
+        .put("api/Categorias/Activar/" + this.adId, {})
+        .then(function () {
+          me.adModal = 0;
+          me.adAccion = 0;
+          me.adNombre = "";
+          me.adId = "";
+          me.Listar();
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
+
+    Desactivar() {
+      let me = this;
+      axios
+        .put("api/Categorias/Desactivar/" + this.adId, {})
+        .then(function () {
+          me.adModal = 0;
+          me.adAccion = 0;
+          me.adNombre = "";
+          me.adId = "";
+          me.Listar();
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
+
+    Validar() {
       this.valida = 0;
       this.validaMensaje = [];
       if (this.nombre.length < 3 || this.nombre.length > 50) {
@@ -253,6 +312,36 @@ export default {
         this.valida = 1;
       }
       return this.valida;
+    },
+
+    close() {
+      this.dialog = false;
+      this.Limpiar();
+    },
+
+    Limpiar() {
+      this.id = "";
+      this.nombre = "";
+      this.descripcion = "";
+      this.editedIndex = -1;
+    },
+  },
+
+  created() {
+    this.Listar();
+  },
+
+  computed: {
+    formTitle() {
+      return this.editedIndex === -1
+        ? "Agregar categoria"
+        : "Actualizar categoria";
+    },
+  },
+
+  watch: {
+    dialog(val) {
+      val || this.close();
     },
   },
 };
