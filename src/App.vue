@@ -26,7 +26,7 @@
             </v-list-item-icon>
             <v-list-item-title>Categorías</v-list-item-title>
           </v-list-item>
-          <v-list-item :to="{ name: '' }">
+          <v-list-item :to="{ name: 'articulo' }">
             <v-list-item-icon>
               <v-icon>local_offer</v-icon>
             </v-list-item-icon>
