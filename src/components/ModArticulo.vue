@@ -50,42 +50,54 @@
                         <v-select
                           v-model="idCategoria"
                           :items="categorias"
-                          label="Categoria"
+                          label="Categoria *"
                         ></v-select>
+                        <small
+                          class="red--text"
+                          v-if="validaMensaje[1] != ''"
+                          >{{ validaMensaje[1] }}</small
+                        >
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
                         <v-text-field
                           v-model="nombre"
-                          label="Nombre"
+                          label="Nombre *"
                         ></v-text-field>
+                        <small
+                          class="red--text"
+                          v-if="validaMensaje[0] != ''"
+                          >{{ validaMensaje[0] }}</small
+                        >
                       </v-col>
                       <v-col cols="6" sm="6" md="6">
                         <v-text-field
                           type="number"
                           v-model="stock"
-                          label="Stock"
+                          label="Stock *"
                         ></v-text-field>
+                        <small
+                          class="red--text"
+                          v-if="validaMensaje[2] != ''"
+                          >{{ validaMensaje[2] }}</small
+                        >
                       </v-col>
                       <v-col cols="6" sm="6" md="6">
                         <v-text-field
                           type="number"
                           v-model="precioVenta"
-                          label="Precio venta"
+                          label="Precio venta *"
                         ></v-text-field>
+                        <small
+                          class="red--text"
+                          v-if="validaMensaje[3] != ''"
+                          >{{ validaMensaje[3] }}</small
+                        >
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
                         <v-text-field
                           v-model="descripcion"
                           label="Descripcion"
                         ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="12" md="12" v-show="valida">
-                        <div
-                          class="red--text"
-                          v-for="v in validaMensaje"
-                          :key="v"
-                          v-text="v"
-                        ></div>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -212,7 +224,6 @@ export default {
       stock: 0,
       precioVenta: 0,
       descripcion: "",
-      valida: 0,
       validaMensaje: [],
       adModal: 0,
       adAccion: 0,
@@ -247,6 +258,7 @@ export default {
       this.descripcion = item.descripcion;
       this.editedIndex = 1;
       this.dialog = true;
+      this.validaMensaje = ["", "", "", ""];
     },
 
     Guardar() {
@@ -369,26 +381,36 @@ export default {
     },
 
     Validar() {
-      this.valida = 0;
+      let isvalido = 0;
       this.validaMensaje = [];
       if (this.nombre.length < 3 || this.nombre.length > 50) {
         this.validaMensaje.push(
           "El nombre debe tener minimo 3 caracteres y maximo 50."
         );
+        isvalido = 1;
+      } else {
+        this.validaMensaje.push("");
       }
       if (!this.idCategoria) {
         this.validaMensaje.push("Seleccione una categoría.");
+        isvalido = 1;
+      } else {
+        this.validaMensaje.push("");
       }
       if (!this.stock || this.stock == 0) {
         this.validaMensaje.push("Ingrese el stock inicial del artículo.");
+        isvalido = 1;
+      } else {
+        this.validaMensaje.push("");
       }
       if (!this.precioVenta || this.precioVenta == 0) {
         this.validaMensaje.push("Ingrese el precio de venta del artículo.");
+        isvalido = 1;
+      } else {
+        this.validaMensaje.push("");
       }
-      if (this.validaMensaje.length) {
-        this.valida = 1;
-      }
-      return this.valida;
+
+      return isvalido; //1:true(no valido); 0:false(valido)
     },
 
     close() {
