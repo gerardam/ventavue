@@ -45,20 +45,17 @@
                           v-model="nombre"
                           label="Nombre"
                         ></v-text-field>
+                        <small
+                          class="red--text"
+                          v-if="validaMensaje[0] != ''"
+                          >{{ validaMensaje[0] }}</small
+                        >
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
                         <v-text-field
                           v-model="descripcion"
                           label="Descripcion"
                         ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="12" md="12" v-show="valida">
-                        <div
-                          class="red--text"
-                          v-for="v in validaMensaje"
-                          :key="v"
-                          v-text="v"
-                        ></div>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -178,7 +175,6 @@ export default {
       id: "",
       nombre: "",
       descripcion: "",
-      valida: 0,
       validaMensaje: [],
       adModal: 0,
       adAccion: 0,
@@ -207,6 +203,7 @@ export default {
       this.descripcion = item.descripcion;
       this.editedIndex = 1;
       this.dialog = true;
+      this.validaMensaje = [""];
     },
 
     Guardar() {
@@ -301,17 +298,18 @@ export default {
     },
 
     Validar() {
-      this.valida = 0;
+      let isvalido = 0;
       this.validaMensaje = [];
       if (this.nombre.length < 3 || this.nombre.length > 50) {
         this.validaMensaje.push(
           "El nombre debe tener minimo 3 caracteres y maximo 50."
         );
+        isvalido = 1;
+      } else {
+        this.validaMensaje.push("");
       }
-      if (this.validaMensaje.length) {
-        this.valida = 1;
-      }
-      return this.valida;
+
+      return isvalido;
     },
 
     close() {
